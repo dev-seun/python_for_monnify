@@ -13,7 +13,7 @@ LONG_DESCRIPTION = 'This package allow you to connnect to monnify payment gatewa
 
 # Setting up
 setup(
-    name="python_monnify",
+    name="py monnify.",
     version=VERSION,
     author="Smarttek (Oladele seun)",
     author_email="<samwhitedove@gmail.com>",
