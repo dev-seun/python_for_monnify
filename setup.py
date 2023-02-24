@@ -8,7 +8,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 VERSION = '0.0.1'
-DESCRIPTION = 'Monnify payment module for web developer'
+DESCRIPTION = 'Monnify payment module for python developer'
 LONG_DESCRIPTION = 'This package allow you to connnect to monnify payment gateway with ease, and perform most of monnify payment solution offered'
 
 # Setting up
@@ -21,7 +21,7 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(),
-    install_requires=['opencv-python', 'pyautogui', 'pyaudio'],
+    install_requires=['requests'],
     keywords=['python', 'payment', 'gateway', 'monnify', 'payment gateway'],
     classifiers=[
         "Development Status :: 1 - Planning",
