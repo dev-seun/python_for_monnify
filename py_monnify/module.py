@@ -1,6 +1,6 @@
 import json, base64, datetime, random, string
 from requests import request
-class InitializeMonnifySDKTransaction:
+class InitializeMonnify:
     """
         Author: Oladele seun
         Github: https://github.com/samwhitedove
@@ -50,6 +50,11 @@ class InitializeMonnifySDKTransaction:
             "startRef" : self.__startRef,
         }
         print(value)
+
+    def __doc__(self):
+        return """
+            A DOC 
+        """
 
     def __toBase64(self) -> str:
         """Convert the contract and the api key to a encoded base64 string"""
@@ -101,7 +106,7 @@ class InitializeMonnifySDKTransaction:
         gen_ref_id:str =''.join(random.choices(string.ascii_lowercase, k=5))
         return f"{start if start != '' else self.__startRef}_{gen_ref_id.upper()}-{datetime.datetime.now().timestamp()}"
 
-    def reserveBankName(self, customerName:str, customerEmail:str, customerBVN:str, preferredCodes:list=[]) -> dict:
+    def reserveBankAccount(self, customerName:str, customerEmail:str, customerBVN:str, preferredCodes:list=[]) -> dict:
         """
             This method allow you to reserve a dedicated account number for any of your app user e.g if you're running a wallet system.
 
@@ -118,7 +123,6 @@ class InitializeMonnifySDKTransaction:
 
             NOTE:: Customer Name will be use as the account name
             PARAMETERS          OPTIONAL ===== TYPE 
-            accountName         NO             STRING
             customerEmail       NO             STRING
             bvn                 NO             STRING
             customerName        NO             STRING
@@ -147,7 +151,7 @@ class InitializeMonnifySDKTransaction:
             return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
         raise ValueError("preferredBanks must be a list of bank codes")
 
-    def initializeTransaction(self, amount:str, customerName:str, paymentDescription:str, customerEmail:str, successUrl:str, refStart:str="") -> dict:
+    def initializeTransaction(self, amount:str, customerName:str, paymentDescription:str, customerEmail:str, redirectUrl:str, refStart:str="") -> dict:
         """
             Method to initialize a single payment to monnify server.. 
             
@@ -169,7 +173,7 @@ class InitializeMonnifySDKTransaction:
             "paymentDescription": paymentDescription, #"Trial transaction"
             "currencyCode": self.__currencyCode,
             "contractCode": self.__contractCode,
-            "redirectUrl": successUrl, #"https://my-merchants-page.com/transaction/confirm"
+            "redirectUrl": redirectUrl, #"https://my-merchants-page.com/transaction/confirm"
             "paymentMethods": self.__paymentMethods,
         }
 
@@ -179,7 +183,7 @@ class InitializeMonnifySDKTransaction:
             return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
         return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
     
-    def deleteReservedAccount(self, accountReference:str) -> dict:
+    def deleteReserveAccount(self, accountReference:str) -> dict:
         """
             Method to delete a reserved account on monnify server.. 
             
@@ -197,13 +201,13 @@ class InitializeMonnifySDKTransaction:
             return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
         return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
     
-    def addReservedAccountToExistingCustomerReservedAccounts(self, preferredBanks:list, accountReference:str) -> dict:
+    def addReservedAccount(self, preferredBanksCodes:list, accountReference:str) -> dict:
         """
             Method to add a more account to an existing custormers reserved account on monnify server.. 
             
             PARAMETER:TYPE ===== REQUIRED ===== DEFAULT ===== TYPE 
             accountReference       YES            NONE        LIST
-            preferredBanks         YES            NONE        STRING
+            preferredBanksCodes         YES            NONE        STRING
 
             The reference id is the account reference
             e.g ACC_REF_SIWSO-1677258463.370003
@@ -212,11 +216,11 @@ class InitializeMonnifySDKTransaction:
             a customer have a reserve account of sterlin bank and
             you want the customer to have another reserve account with wema bank etc.
         """
-        if isinstance(preferredBanks, list):
+        if isinstance(preferredBanksCodes, list):
             url = f"{self.__baseUrl}/api/v1/bank-transfer/reserved-accounts/add-linked-accounts/{accountReference}"
             body = {
                 "getAllAvailableBanks": False,
-                "preferredBanks": ["035"]
+                "preferredBanksCodes": ["035"]
             }
             resp = self.__make_request(url=url, payload=body, method="PUT")
             if resp['statusCode'] == 200:
