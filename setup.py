@@ -15,8 +15,12 @@ LONG_DESCRIPTION = 'This package allow you to connnect to monnify payment gatewa
 setup(
     name="py_monnify",
     version=VERSION,
-    author=[{"name": "Smarttek (Oladele seun)", "email": "samwhitedove@gmail.com"}],
+    author="Smarttek",
+    fullname="Oladele seun",
     author_email="<samwhitedove@gmail.com>",
+    maintainer="smarttek",
+    maintainer_email="samwhitedove@gmail.com",
+    url="https://github.com/samwhitedove/python_for_monnify",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
@@ -33,7 +37,7 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ],
-    project_urls =[
-        "https://github.com/samwhitedove/python_for_monnify"
-    ]
+    license= "OSI Approved :: MIT License",
+    download_url= "https://github.com/samwhitedove/python_for_monnify",
+
 )

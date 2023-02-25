@@ -1,5 +1,7 @@
-/dist
-/build
+build
+dist
+py_monnify.egg-info
+test.py
 
 python3 setup.py sdist bdist_wheel
 pip install twine
