@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.0.2'
+VERSION = '0.0.6'
 DESCRIPTION = 'Monnify payment module for python developer'
 LONG_DESCRIPTION = 'This package allow you to connnect to monnify payment gateway with ease, and perform most of monnify payment solution offered'
 

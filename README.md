@@ -1,5 +1,5 @@
 ### MONNIFY PYTHON PACKAGE USER GUIDE
-> Version 0.0.2
+> Version 0.0.6
 
 Before you can start integrating to Monnify, you will need to sign up on Monnify. https://app.monnify.com/create-account to sign up. After successful registration, login and for your credentials.
 
@@ -40,6 +40,7 @@ PARAMETER:TYPE ===== REQUIRED ===== DEFAULT ========================== TYPE ====
 contractCode         YES            NONE                               STRING           NONE
 apiKey               YES            NONE                               STRING           NONE
 secretKey            YES            NONE                               STRING           NONE
+refStart             YES            PYMON_                             STRING           NONE
 currencyCode         NO             NGN                                STRING           CHECK MONNIFY FOR YOUR COUNTRY CURRENCY CODE
 paymentMethods       NO            ["CARD","ACCOUNT_TRANSFER"]         LIST             ["CARD","ACCOUNT_TRANSFER","USSD","PHONE_NUMBER"]
 ```
@@ -56,6 +57,7 @@ init = monnify.InitializeMonnify(contractCode= contractCode, apiKey= api_key, se
 ```
 
 NOTE: dont forget to change credentials to live credentials, if you're TESTING with test account.
+NOTE: refStart is a parameter that determine the text starting your transaction reference code for custimization you can change it to your preferred code, the default is PYMON_. 
 NOTE: currencyCode is the supported monnify currency for every country. please check monnify website to find your country currency code
 NOTE: paymentMethods are list of payment method monnify supports, please check monnify website to find out more.
 
@@ -107,7 +109,6 @@ do something with the response.
 ```
 
 NOTE: The above required parameter are to be passed to the method.
-NOTE: refStart is a parameter that determine the text starting your transaction reference code for custimization you can change it to your preferred code, the default is MFY_PY. 
 NOTE: redirectUrl is the url where monnify will redirect your user after a successful or a failed transaction process. I will suggest you create a page withing your site or application that will take response payload from monnify after redirecting to your redirect page because while redirecting to this page monnify send a response payload.
 NOTE: Always check verify transaction status using ***validateTransactionStatus*** method from monnify before given value to customers.
 

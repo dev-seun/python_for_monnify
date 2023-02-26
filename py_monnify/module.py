@@ -5,8 +5,8 @@ class InitializeMonnify:
         Author: Oladele seun
         Github: https://github.com/samwhitedove
         Linkedin: https://www.linkedin.com/in/archivas/
-        Version: 0.0.1
-        Date: 21:02:2023
+        Version: 0.0.6
+        Date: 26:02:2023
         Descriptio: This module allow you to perform basic monnify actions, 
                     i didnt cover all their api but feel free to request for anyone you need :)
 
@@ -20,21 +20,25 @@ class InitializeMonnify:
         currencyCode:str,    NO             NGN                                STRING           CHECK MONNIFY FOR YOUR COUNTRY CURRENCY CODE
         apiKey:str,          YES            NONE                               STRING           NONE
         secretKey:str,       YES            NONE                               STRING           NONE
+        refStart:str,        YES            PYMON                              STRING           NONE
         paymentMethods       NO            ["CARD","ACCOUNT_TRANSFER"]         LIST             ["CARD","ACCOUNT_TRANSFER","USSD","PHONE_NUMBER"]
     """
     
-    def __init__(self, contractCode:str, apiKey:str, secretKey:str, currencyCode:str = "", paymentMethods:list = []) -> None:
-        """Initializing thhe class fields"""
-        self.__apiKey:str = apiKey
-        self.__secretKey:str = secretKey
-        self.__contractCode:str = contractCode
-        self.__currencyCode:str = currencyCode
-        self.__paymentMethods:str = paymentMethods
+    def __init__(self, contractCode:str, apiKey:str, secretKey:str, currencyCode:str = "", refStart:str="", paymentMethods:list = []) -> None:
+        """Initializing the class fields"""
+
+        if refStart.strip().__contains__(" "):
+            return ValueError("Invalid refStart cannot contain spaces")
+        if not isinstance(paymentMethods, list):
+            raise ValueError("paymentMethods must be a list of bank codes")
+        self.__apiKey:str = apiKey.strip()
+        self.__secretKey:str = secretKey.strip()
+        self.__contractCode:str = contractCode.strip()
+        self.__currencyCode:str = currencyCode.strip()
         self.__baseUrl:str = "https://sandbox.monnify.com"
-        self.__token:str = ""
-        self.__paymentMethods:str = ["CARD","ACCOUNT_TRANSFER"]
-        self.__currencyCode:str = "NGN"
-        self.__startRef:str = "MFY_PY"
+        self.__paymentMethods:str = paymentMethods if paymentMethods.__len__() != 0 else ["CARD","ACCOUNT_TRANSFER"]
+        self.__currencyCode:str = currencyCode if currencyCode.strip().__len__() != 0 else "NGN"
+        self.__startRef:str = refStart if refStart.strip().__len__() != 0 else "PYMON"
 
     def __str__(self):
         value =  {
@@ -44,17 +48,11 @@ class InitializeMonnify:
             "currencyCode" : self.__currencyCode,
             "paymentMethods" : self.__paymentMethods,
             "baseUrl" : self.__baseUrl,
-            "token" : self.__token,
             "paymentMethods" : self.__paymentMethods,
             "currencyCode" : self.__currencyCode,
             "startRef" : self.__startRef,
         }
         print(value)
-
-    def __doc__(self):
-        return """
-            A DOC 
-        """
 
     def __toBase64(self) -> str:
         """Convert the contract and the api key to a encoded base64 string"""
@@ -91,7 +89,7 @@ class InitializeMonnify:
             resp = request(method, url=url, headers=headers, json=payload)
             data = json.loads(resp.text)
             if resp.status_code == 200:
-                return {"data": data['responseBody'], "message": data['responseMessage'], "statusCode": resp.status_code, 'responseCode': data['responseCode'],}
+                return { "message": data['responseMessage'], "statusCode": resp.status_code, 'responseCode': data['responseCode'], "data": data['responseBody']}
             return {"message": data['responseMessage'], "statusCode": resp.status_code , 'responseCode': data['responseCode']}
         return {"message": accessToken['message'], "statusCode": accessToken['statusCode'], 'responseCode': accessToken['responseCode']}
 
@@ -129,29 +127,27 @@ class InitializeMonnify:
             preferredBanks      YES            LIST
         """
         
-        if isinstance(preferredCodes, list):
-            url = f"{self.__baseUrl}/api/v2/bank-transfer/reserved-accounts"
-            body = {
-                "accountReference": self.__generate_receipt_id(start="ACC_REF"),
-                "accountName": customerName,
-                "currencyCode": self.__currencyCode,
-                "contractCode":  self.__contractCode,
-                "customerEmail": customerEmail,
-                "bvn": customerBVN,
-                "customerName": customerName,
-                "getAllAvailableBanks": True if len(preferredCodes) == 0 else False
-            }
+        if not isinstance(preferredCodes, list):
+            raise ValueError("preferredBanks must be a list of bank codes")
 
-            if len(preferredCodes) != 0:
-                body.update({"preferredBanks": preferredCodes})
+        url = f"{self.__baseUrl}/api/v2/bank-transfer/reserved-accounts"
+        body = {
+            "accountReference": self.__generate_receipt_id(start="ACC_REF"),
+            "accountName": customerName,
+            "currencyCode": self.__currencyCode,
+            "contractCode":  self.__contractCode,
+            "customerEmail": customerEmail,
+            "bvn": customerBVN,
+            "customerName": customerName,
+            "getAllAvailableBanks": True if preferredCodes.__len__() == 0 else False
+        }
 
-            resp = self.__make_request(url=url, payload=body)
-            if resp['statusCode'] == 200:
-                return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": resp['data'] }
-            return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
-        raise ValueError("preferredBanks must be a list of bank codes")
+        if preferredCodes.__len__() != 0:
+            body.update({"preferredBanks": preferredCodes})
 
-    def initializeTransaction(self, amount:str, customerName:str, paymentDescription:str, customerEmail:str, redirectUrl:str, refStart:str="") -> dict:
+        return self.__make_request(url=url, payload=body)
+
+    def initializeTransaction(self, amount:str, customerName:str, paymentDescription:str, customerEmail:str, redirectUrl:str) -> dict:
         """
             Method to initialize a single payment to monnify server.. 
             
@@ -159,29 +155,25 @@ class InitializeMonnify:
             amount                  YES            NONE         STRING
             customerName            YES            NONE         STRING
             customerEmail           YES            NONE         STRING
-            paymentDescriptio       YES            NONE         STRING
+            paymentDescription      YES            NONE         STRING
             redirectUrl             YES            NONE         STRING
-            refStart                NO             MFY_PY       STRING
         """
+        if not redirectUrl.startswith("http"):
+            raise ValueError("redirect url must start with http:// or https://")
 
         url = f"{self.__baseUrl}/api/v1/merchant/transactions/init-transaction"
         body = {
             "amount": str(amount),
             "customerName": customerName,
             "customerEmail": customerEmail,#"stephen@ikhane.com",
-            "paymentReference": self.__generate_receipt_id(start=refStart), # "123031klsadkad"
+            "paymentReference": self.__generate_receipt_id(start=self.__startRef), # "123031klsadkad"
             "paymentDescription": paymentDescription, #"Trial transaction"
             "currencyCode": self.__currencyCode,
             "contractCode": self.__contractCode,
             "redirectUrl": redirectUrl, #"https://my-merchants-page.com/transaction/confirm"
-            "paymentMethods": self.__paymentMethods,
         }
 
-        resp = self.__make_request(url=url, payload=body)
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, payload=body)
     
     def deleteReserveAccount(self, accountReference:str) -> dict:
         """
@@ -195,11 +187,7 @@ class InitializeMonnify:
         """
         url = f"{self.__baseUrl}/api/v1/bank-transfer/reserved-accounts/reference/{accountReference}"
 
-        resp = self.__make_request(url=url, method="DELETE")
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, method="DELETE")
     
     def addReservedAccount(self, preferredBanksCodes:list, accountReference:str) -> dict:
         """
@@ -216,18 +204,17 @@ class InitializeMonnify:
             a customer have a reserve account of sterlin bank and
             you want the customer to have another reserve account with wema bank etc.
         """
-        if isinstance(preferredBanksCodes, list):
-            url = f"{self.__baseUrl}/api/v1/bank-transfer/reserved-accounts/add-linked-accounts/{accountReference}"
-            body = {
-                "getAllAvailableBanks": False,
-                "preferredBanksCodes": ["035"]
-            }
-            resp = self.__make_request(url=url, payload=body, method="PUT")
-            if resp['statusCode'] == 200:
-                data = resp['data']
-                return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-            return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
-        raise ValueError("preferred bank must be a list type")
+        if not isinstance(preferredBanksCodes, list):
+            raise ValueError("preferred bank must be a list type")
+        if preferredBanksCodes.__len__() == 0:
+            raise ValueError("preferred bank must have at least one bank code")
+
+        url = f"{self.__baseUrl}/api/v1/bank-transfer/reserved-accounts/add-linked-accounts/{accountReference}"
+        body = {
+            "getAllAvailableBanks": False,
+            "preferredBanksCodes": preferredBanksCodes
+        }
+        return self.__make_request(url=url, payload=body, method="PUT")
     
     def updateCustomerReserveAccountBvn(self, bvn:str, accountReference:str) -> dict:
         """
@@ -247,11 +234,7 @@ class InitializeMonnify:
         body = {
             "bvn": bvn
         }
-        resp = self.__make_request(url=url, payload=body, method="PUT")
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, payload=body, method="PUT")
     
     def getAllTransactionOnAReserveAccount(self, accountReference:str, page:str="0", size:str="10") -> dict:
         """
@@ -267,11 +250,7 @@ class InitializeMonnify:
         """
         url = f"{self.__baseUrl}/api/v1/bank-transfer/reserved-accounts/transactions?accountReference={accountReference}&page={page}&size={size}"
 
-        resp = self.__make_request(url=url, method="GET")
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, method="GET")
     
     def getASingleCustomerAllReservedAccount(self, accountReference:str) -> dict:
         """
@@ -285,11 +264,7 @@ class InitializeMonnify:
         """
         url = f"{self.__baseUrl}/api/v2/bank-transfer/reserved-accounts/{accountReference}"
 
-        resp = self.__make_request(url=url, method="GET")
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, method="GET")
     
     def validateTransactionStatus(self, transactionReference:str) -> dict:
         """
@@ -304,8 +279,4 @@ class InitializeMonnify:
         """
         url = f"{self.__baseUrl}/api/v2/transactions/{transactionReference}"
 
-        resp = self.__make_request(url=url, method="GET")
-        if resp['statusCode'] == 200:
-            data = resp['data']
-            return {  "statusCode": resp['statusCode'],  'responseCode': resp['responseCode'], "data": data }
-        return {"statusCode": resp['statusCode'], "message": resp['message'], 'responseCode': resp['responseCode']}
+        return self.__make_request(url=url, method="GET")
